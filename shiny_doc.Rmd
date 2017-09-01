@@ -1,0 +1,58 @@
+---
+title: "Shiny Application Documentation"
+author: "Brian Yarno"
+date: "August 27, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+##Overview
+
+This application is based on the Life Cycle Savings Data available in the R data library.  This dataset includes age, disposable income, and savings ratio data for 50 countries.  The variable of interest  we are predicting in this application is the Savings Ratio (sr), which is defined as the “aggregate personal savings divided by disposable income”.  
+
+The application provides two unique outputs based on user inputs.  First, it will provide a prediction of the Savings Ratio for a hypothetical country based on user defined values for the variables in the dataset.  Second, it will output a table with the countries that most closely match the profile of a country with the user defined parameters.  The countries listed in this table are highlighted on a world map.
+
+##Data
+The lifecycle dataset is described as follows in the R library:  
+
+    Under the life-cycle savings hypothesis as developed by Franco Modigliani, the savings ratio (aggregate personal saving divided by disposable income) is explained by per-capita disposable income, the percentage rate of change in per-capita disposable income, and two demographic variables: the percentage of population less than 15 years old and the percentage of the population over 75 years old. The data are averaged over the decade 1960–1970 to remove the business cycle or other short-term fluctuations.  
+    
+The dataset contains 50 observations the following five variables.  dpi was not used in the predictive models and user inputs, as it was found to be an insignificant predictor of the savings ratio.  
+
+    **sr:**  numeric	aggregate personal savings
+    **pop15:**  numeric	% of population under 15
+    **pop75:**  numeric	% of population over 75
+    **dpi:**  numeric	real per-capita disposable income
+    **ddpi:**  numeric	% growth rate of dpi
+
+##User Instructions
+1.	Select values from the drop down boxes for each variable.  As a default, the drop down boxes are populated with the mean values for each variable.  The input limits for each variable are as follows:  
+
+    **pop15:**  25 – 65  
+    **pop75:**  0 – 10  
+    **ddpi:**  0 – 25  
+
+2.	Click on the ‘Calculate’ button.  The savings ratio prediction,  table with similar countries, and world map will then be presented
+3.	Any time you want to change the values in the drop down box, be sure to click the “Calculate” button again to see updated predictions and matching countries
+
+##Methods
+###Savings Ratio Prediction
+A simple linear regression model is used to provide the prediction of the Savings Ratio.   The model uses all variables in the dataset except dpi, as it was found to be an insignificant predictor.  Code for the model, and coefficient values are listed below:
+```{r lm}
+lm(sr ~ pop15 + pop75 + ddpi, data = LifeCycleSavings)
+```
+
+###Table Listing Similar Countries
+The list of countries most closely matching the profile of the user defined inputs is generated using the K-Means clustering algorithm.  Ten clusters were generated, with each of the 50 countries in the dataset assigned to a cluster based on their values of pop15, pop75, ddpi, and sr.  A cluster is then assigned to the hypothetical country based on the user defined values for pop15, pop75, and ddpi, as well as the predicted Savings ratio Value.  The countries matching this cluster assignment are shown in the table.  
+
+The 50 countries included in the dataset, and their cluster assignments, are listed below.
+
+```{r cluster}
+clust <- kmeans(LifeCycleSavings[names(LifeCycleSavings) %in% c("pop15", "pop75", "ddpi", "sr")], 10)
+clust_list <- as.data.frame(clust$cluster)
+names(clust_list) <- c("Cluster_ID")
+clust_list
+```
